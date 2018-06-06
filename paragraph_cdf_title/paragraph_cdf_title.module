@@ -22,12 +22,9 @@ function paragraph_cdf_title_acquia_contenthub_cdf_from_drupal_alter(ContentHubE
     if($contenthub_entity->getAttribute('title')) return;
 
     $paragraph_type = $contenthub_entity->getAttribute('type')['value']['en'];
+    $parent_node = paragraph_cdf_title_parent_node($contenthub_entity);
 
-    /**
-     * This series of if statements finds the Attribute to be used to create the title Attribute.
-     * In some cases (uuid, default constant) it simply creates a $title variable which
-     * is a string rather than an Attribute object.
-     */
+    //Get the lineup of fields, in order of preference
     $fields = [];
     if(isset($config->get('paragraphs')[$paragraph_type])){
       $fields = $config->get('paragraphs')[$paragraph_type];
@@ -39,7 +36,11 @@ function paragraph_cdf_title_acquia_contenthub_cdf_from_drupal_alter(ContentHubE
     if(isset($default['secondary'])){
       $fields[] = $default['secondary'];
     }
-    //Set the title_attribute or the title with the first valid field.
+    /**
+     * Set the title Attribute or title string with the first valid field.
+     * In some cases (uuid, default constant) it simply creates a $title variable which
+     * is a string rather than an Attribute object.
+     */
     foreach($fields as $field){
       if($field == 'uuid'){
         //uuid is special because it's not a CDF attribute.
@@ -53,12 +54,12 @@ function paragraph_cdf_title_acquia_contenthub_cdf_from_drupal_alter(ContentHubE
 
     //Do we need to resort to the Desparation text?
     if(!isset($title_attribute) && !isset($title)){
-      $title = paragraph_cdf_title_replace($default['constant'], $contenthub_entity, $paragraph_type);
+      $title = paragraph_cdf_title_replace($default['constant'], $contenthub_entity, $paragraph_type, $parent_node);
     }
 
     //Is there a prefix/suffix?
-    $prefix = $default['prefix'] ? paragraph_cdf_title_replace($default['prefix'], $contenthub_entity, $paragraph_type) : '';
-    $suffix = $default['suffix'] ? paragraph_cdf_title_replace($default['suffix'], $contenthub_entity, $paragraph_type) : '';
+    $prefix = $default['prefix'] ? paragraph_cdf_title_replace($default['prefix'], $contenthub_entity, $paragraph_type, $parent_node) : '';
+    $suffix = $default['suffix'] ? paragraph_cdf_title_replace($default['suffix'], $contenthub_entity, $paragraph_type, $parent_node) : '';
 
     //We need langcodes wo we can loop properly
     $langcodes = $contenthub_entity->getAttribute('langcode') ? $contenthub_entity->getAttribute('langcode')['value'] : FALSE;
@@ -89,8 +90,8 @@ function paragraph_cdf_title_acquia_contenthub_cdf_from_drupal_alter(ContentHubE
 /**
  * Replaces the small set of custom tokens and then leverages real tokens.
  */
-function paragraph_cdf_title_replace($str, $contenthub_entity, $paragraph_type){
-  $node = paragraph_cdf_title_parent_node($contenthub_entity);
+function paragraph_cdf_title_replace($str, $contenthub_entity, $paragraph_type, $parent_node){
+  //first handle the custom tokens
   if(strpos($str, '[cdf:uuid]') !== FALSE){
     $str = str_replace('[cdf:uuid]', $contenthub_entity->getUuid(), $str);
   }
@@ -103,7 +104,7 @@ function paragraph_cdf_title_replace($str, $contenthub_entity, $paragraph_type){
   }
   //Now we leverage real tokens
   $token = Drupal::token();
-  $str = $token->replace($str, array('node' => $node));
+  $str = $token->replace($str, array('node' => $parent_node));
 
   return $str;
 }
@@ -113,10 +114,11 @@ function paragraph_cdf_title_parent_node($contenthub_entity){
   $entity_type = reset($contenthub_entity->getAttribute('parent_type')->getValue('en'));
   $entity_id = $contenthub_entity->getAttribute('parent_uuid')->getValue('en');
   $entity = $entity_repository->loadEntityByUuid($entity_type, $entity_id);
+  //back out of the paragraph until we find a node
   while($entity->getEntityType()->id() == 'paragraph'){
     \Drupal::logger('cdf')->notice('paragraph');
     $entity = $entity->getParentEntity();
   }
   //should be a node now
-  return $entity;
+  return $entity->getEntityType()->id() == 'node' ? $entity : NULL;
 }
