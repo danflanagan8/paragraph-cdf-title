@@ -1,0 +1,129 @@
+<?php
+
+use Drupal\Core\Entity\ContentEntityInterface;
+use Acquia\ContentHubClient\Entity as ContentHubEntity;
+use Drupal\Core\Entity\EntityInterface;
+use Acquia\ContentHubClient\Attribute;
+
+/**
+ * Implements hook_acquia_contenthub_cdf_from_drupal_alter
+ * which is provided by the acquia_contenthub module.
+ *
+ * Adds a meaningful title to a Paragraph CDF before it's sent to content hub.
+ * Note that this does not modify the Paragraph entity in Drupal.
+ */
+function paragraph_cdf_title_acquia_contenthub_cdf_from_drupal_alter(ContentHubEntity $contenthub_entity) {
+
+  $config = \Drupal::configFactory()->get('paragraph_cdf_title.settings');
+
+  if ($contenthub_entity->getType() == 'paragraph') {
+
+    //This hook can run multiple times on the same entity. Let's break out if this already has a title.
+    if($contenthub_entity->getAttribute('title')) return;
+
+    $paragraph_type = $contenthub_entity->getAttribute('type')['value']['en'];
+
+    /**
+     * This series of if statements finds the Attribute to be used to create the title Attribute.
+     * In some cases (uuid, default constant) it simply creates a $title variable which
+     * is a string rather than an Attribute object.
+     */
+    if($bundle_specific_config = $config->get('paragraphs')[$paragraph_type]){
+      foreach($bundle_specific_config as $field){
+        if($field == 'uuid'){
+          $title = $contenthub_entity->getUuid();
+          break;
+        }else if($contenthub_entity->getAttribute($field)){
+          $title_attribute = $contenthub_entity->getAttribute($field);
+          break;
+        }
+      }
+    }
+    $default = $config->get('default');
+    if(!isset($title_attribute) && !isset($title) && $default['primary']){
+      //try primary field
+      $field = $default['primary'];
+      if($field == 'uuid'){
+        $title = $contenthub_entity->getUuid();
+      }else if($contenthub_entity->getAttribute($field)){
+        $title_attribute = $contenthub_entity->getAttribute($field);
+      }
+    }
+    //secondary field?
+    if(!isset($title_attribute) && !isset($title) && $default['secondary']){
+      $field = $default['secondary'];
+      if($field == 'uuid'){
+        $title = $contenthub_entity->getUuid();
+      }else if($contenthub_entity->getAttribute($field)){
+        $title_attribute = $contenthub_entity->getAttribute($field);
+      }
+    }
+    //Desparation text fallback?
+    if(!isset($title_attribute) && !isset($title)){
+      $title = paragraph_cdf_title_replace($default['constant'], $contenthub_entity, $paragraph_type);
+    }
+
+    //Is there a prefix/suffix?
+    $prefix = $default['prefix'] ? paragraph_cdf_title_replace($default['prefix'], $contenthub_entity, $paragraph_type) : '';
+    $suffix = $default['suffix'] ? paragraph_cdf_title_replace($default['suffix'], $contenthub_entity, $paragraph_type) : '';
+
+    //We need langcodes wo we can loop properly
+    $langcodes = $contenthub_entity->getAttribute('langcode') ? $contenthub_entity->getAttribute('langcode')['value'] : FALSE;
+    if(!$langcodes){
+      $langcodes = array('und');
+    }
+
+    //This loop creates the title Attribute and sets a value for each langcode.
+    foreach($langcodes as $langcode){
+      if(isset($title_attribute)){
+        $title = $title_attribute->getValue($langcode);
+        //Sometimes this is an array, often single-valued. We take the first value.
+        if(is_array($title)){
+          $title = reset($title);
+        }
+      }
+      //Set the title. First time through the loop the if statement will be false.
+      if($contenthub_entity->getAttribute('title')){
+        $contenthub_entity->getAttribute('title')->setValue($prefix . $title . $suffix, $langcode);
+      }else{
+        $att = new Attribute('string');
+        $contenthub_entity->setAttribute('title', $att->setValue($prefix . $title . $suffix, $langcode));
+      }
+    }
+  }
+}
+
+/**
+ * Replaces the small set of custom tokens and then leverages real tokens.
+ */
+function paragraph_cdf_title_replace($str, $contenthub_entity, $paragraph_type){
+  $node = paragraph_cdf_title_parent_node($contenthub_entity);
+  if(strpos($str, '[cdf:uuid]') !== FALSE){
+    $str = str_replace('[cdf:uuid]', $contenthub_entity->getUuid(), $str);
+  }
+  if(strpos($str, '[cdf:bundle:machine]') !== FALSE){
+    $str = str_replace('[cdf:bundle:machine]', $paragraph_type, $str);
+  }
+  if(strpos($str, '[cdf:bundle:label]') !== FALSE){
+    $bundles = \Drupal::service('entity_type.bundle.info')->getBundleInfo('paragraph');
+    $str = str_replace('[cdf:bundle:label]', $bundles[$paragraph_type]['label'], $str);
+  }
+  //Now we leverage real tokens
+  $token = Drupal::token();
+  $str = $token->replace($str, array('node' => $node));
+
+  return $str;
+}
+
+function paragraph_cdf_title_parent_node($contenthub_entity){
+  $entity_repository = \Drupal::service('entity.repository');
+  $entity_type = reset($contenthub_entity->getAttribute('parent_type')->getValue('en'));
+  $entity_id = $contenthub_entity->getAttribute('parent_uuid')->getValue('en');
+  $entity = $entity_repository->loadEntityByUuid($entity_type, $entity_id);
+  if($entity->getEntityType()->id() == 'paragraph'){
+    \Drupal::logger('cdf')->notice('paragraph');
+    $entity = $entity->getParentEntity();
+  }
+  //should be a node now
+  return $entity;
+}

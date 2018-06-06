@@ -1,0 +1,7 @@
+paragraph_cdf_title.config:
+  path: '/admin/config/paragraph_cdf_title'
+  defaults:
+    _title: 'Paragraph CDF Title config'
+    _form: '\Drupal\paragraph_cdf_title\Form\ParagraphCDFTitleForm'
+  requirements:
+    _permission: 'administer site configuration'
