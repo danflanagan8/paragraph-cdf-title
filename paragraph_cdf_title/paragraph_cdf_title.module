@@ -28,37 +28,30 @@ function paragraph_cdf_title_acquia_contenthub_cdf_from_drupal_alter(ContentHubE
      * In some cases (uuid, default constant) it simply creates a $title variable which
      * is a string rather than an Attribute object.
      */
-    if($bundle_specific_config = $config->get('paragraphs')[$paragraph_type]){
-      foreach($bundle_specific_config as $field){
-        if($field == 'uuid'){
-          $title = $contenthub_entity->getUuid();
-          break;
-        }else if($contenthub_entity->getAttribute($field)){
-          $title_attribute = $contenthub_entity->getAttribute($field);
-          break;
-        }
-      }
+    $fields = [];
+    if(isset($config->get('paragraphs')[$paragraph_type])){
+      $fields = $config->get('paragraphs')[$paragraph_type];
     }
     $default = $config->get('default');
-    if(!isset($title_attribute) && !isset($title) && $default['primary']){
-      //try primary field
-      $field = $default['primary'];
+    if(isset($default['primary'])){
+      $fields[] = $default['primary'];
+    }
+    if(isset($default['secondary'])){
+      $fields[] = $default['secondary'];
+    }
+    //Set the title_attribute or the title with the first valid field.
+    foreach($fields as $field){
       if($field == 'uuid'){
+        //uuid is special because it's not a CDF attribute.
         $title = $contenthub_entity->getUuid();
+        break;
       }else if($contenthub_entity->getAttribute($field)){
         $title_attribute = $contenthub_entity->getAttribute($field);
+        break;
       }
     }
-    //secondary field?
-    if(!isset($title_attribute) && !isset($title) && $default['secondary']){
-      $field = $default['secondary'];
-      if($field == 'uuid'){
-        $title = $contenthub_entity->getUuid();
-      }else if($contenthub_entity->getAttribute($field)){
-        $title_attribute = $contenthub_entity->getAttribute($field);
-      }
-    }
-    //Desparation text fallback?
+
+    //Do we need to resort to the Desparation text?
     if(!isset($title_attribute) && !isset($title)){
       $title = paragraph_cdf_title_replace($default['constant'], $contenthub_entity, $paragraph_type);
     }
