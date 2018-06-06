@@ -120,7 +120,7 @@ function paragraph_cdf_title_parent_node($contenthub_entity){
   $entity_type = reset($contenthub_entity->getAttribute('parent_type')->getValue('en'));
   $entity_id = $contenthub_entity->getAttribute('parent_uuid')->getValue('en');
   $entity = $entity_repository->loadEntityByUuid($entity_type, $entity_id);
-  if($entity->getEntityType()->id() == 'paragraph'){
+  while($entity->getEntityType()->id() == 'paragraph'){
     \Drupal::logger('cdf')->notice('paragraph');
     $entity = $entity->getParentEntity();
   }
