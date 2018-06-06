@@ -1,2 +1,2 @@
 default:
-  constant: 'Paragraph'
+  text: '[cdf:bundle:label] Paragraph from [node:title]'

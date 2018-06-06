@@ -55,10 +55,10 @@ class ParagraphCDFTitleForm extends ConfigFormBase {
       '#default_value' => isset($config->get('default')['secondary']) ? $config->get('default')['secondary'] : '',
       '#required' => FALSE,
     ];
-    $form['default']['constant'] = [
+    $form['default']['text'] = [
       '#type' => 'textfield',
       '#title' => t('Desperation Title'),
-      '#default_value' => isset($config->get('default')['constant']) ? $config->get('default')['constant'] : '',
+      '#default_value' => isset($config->get('default')['text']) ? $config->get('default')['text'] : '',
       '#required' => TRUE,
       '#description' => 'Title of last resort. Used if all selected fields are empty.',
     ];

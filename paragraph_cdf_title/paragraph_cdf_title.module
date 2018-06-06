@@ -38,7 +38,7 @@ function paragraph_cdf_title_acquia_contenthub_cdf_from_drupal_alter(ContentHubE
     }
     /**
      * Set the title Attribute or title string with the first valid field.
-     * In some cases (uuid, default constant) it simply creates a $title variable which
+     * In some cases (uuid, default text) it simply creates a $title variable which
      * is a string rather than an Attribute object.
      */
     foreach($fields as $field){
@@ -54,7 +54,7 @@ function paragraph_cdf_title_acquia_contenthub_cdf_from_drupal_alter(ContentHubE
 
     //Do we need to resort to the Desparation text?
     if(!isset($title_attribute) && !isset($title)){
-      $title = paragraph_cdf_title_replace($default['constant'], $contenthub_entity, $paragraph_type, $parent_node);
+      $title = paragraph_cdf_title_replace($default['text'], $contenthub_entity, $paragraph_type, $parent_node);
     }
 
     //Is there a prefix/suffix?
