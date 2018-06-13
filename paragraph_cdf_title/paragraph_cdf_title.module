@@ -52,14 +52,18 @@ function paragraph_cdf_title_acquia_contenthub_cdf_from_drupal_alter(ContentHubE
       }
     }
 
-    //Do we need to resort to the Desparation text?
+    //prepare to replace tokens in default text, prefix, suffix
+    $token = Drupal::token();
+    $token_data = array('node' => $parent_node, 'cdf' => $contenthub_entity);
+
+    //Do we need to resort to the Desperation text?
     if(!isset($title_attribute) && !isset($title)){
-      $title = paragraph_cdf_title_replace($default['text'], $contenthub_entity, $paragraph_type, $parent_node);
+      $title = $token->replace($default['text'], $token_data);
     }
 
     //Is there a prefix/suffix?
-    $prefix = $default['prefix'] ? paragraph_cdf_title_replace($default['prefix'], $contenthub_entity, $paragraph_type, $parent_node) : '';
-    $suffix = $default['suffix'] ? paragraph_cdf_title_replace($default['suffix'], $contenthub_entity, $paragraph_type, $parent_node) : '';
+    $prefix = $default['prefix'] ? $token->replace($default['prefix'], $token_data) : '';
+    $suffix = $default['suffix'] ? $token->replace($default['suffix'], $token_data) : '';
 
     //We need langcodes wo we can loop properly
     $langcodes = $contenthub_entity->getAttribute('langcode') ? $contenthub_entity->getAttribute('langcode')['value'] : FALSE;
@@ -85,28 +89,6 @@ function paragraph_cdf_title_acquia_contenthub_cdf_from_drupal_alter(ContentHubE
       }
     }
   }
-}
-
-/**
- * Replaces the small set of custom tokens and then leverages real tokens.
- */
-function paragraph_cdf_title_replace($str, $contenthub_entity, $paragraph_type, $parent_node){
-  //first handle the custom tokens
-  if(strpos($str, '[cdf:uuid]') !== FALSE){
-    $str = str_replace('[cdf:uuid]', $contenthub_entity->getUuid(), $str);
-  }
-  if(strpos($str, '[cdf:bundle:machine]') !== FALSE){
-    $str = str_replace('[cdf:bundle:machine]', $paragraph_type, $str);
-  }
-  if(strpos($str, '[cdf:bundle:label]') !== FALSE){
-    $bundles = \Drupal::service('entity_type.bundle.info')->getBundleInfo('paragraph');
-    $str = str_replace('[cdf:bundle:label]', $bundles[$paragraph_type]['label'], $str);
-  }
-  //Now we leverage real tokens
-  $token = Drupal::token();
-  $str = $token->replace($str, array('node' => $parent_node));
-
-  return $str;
 }
 
 function paragraph_cdf_title_parent_node($contenthub_entity){

@@ -38,7 +38,7 @@ class ParagraphCDFTitleForm extends ConfigFormBase {
       '#tree' => TRUE,
       '#type' => 'fieldset',
       '#title' => 'Default Settings',
-      '#description' => 'Available custom tokens: [cdf:uuid], [cdf:bundle:machine], [cdf:bundle:label]. Paragraphs currently have poor out-of-the-box token support.'
+      '#description' => 'There are a few Paragraph CDF tokens provided by this module. Any node token will be understood as the closest ancestor node to which this Paragraph is attached. For example, the Paragraph might be attached to a Paragraph that is attached to a node; that\'s the node the tokens would use.'
     ];
     $field_options = $this->getFieldOptions(array_keys($bundles));
     $form['default']['primary'] = [
@@ -67,19 +67,18 @@ class ParagraphCDFTitleForm extends ConfigFormBase {
       '#title' => t('Title Prefix (always used if configured)'),
       '#default_value' => isset($config->get('default')['prefix']) ? $config->get('default')['prefix'] : '',
       '#required' => FALSE,
-      '#description' => 'Text that should <b>always</b> be prepended to the newly created CDF Paragraph title even if the Paragraph is using bundle-specific settings.',
+      '#description' => 'Text that will <b>always</b> be prepended to the newly created CDF Paragraph title even if the Paragraph is using bundle-specific settings.',
     ];
     $form['default']['suffix'] = [
       '#type' => 'textfield',
       '#title' => t('Title Suffix (always used if configured)'),
       '#default_value' => isset($config->get('default')['suffix']) ? $config->get('default')['suffix'] : '',
       '#required' => FALSE,
-      '#description' => 'Text that should <b>always</b> be appended to the newly created CDF Paragraph title even if the Paragraph is using bundle-specific settings.',
+      '#description' => 'Text that will <b>always</b> be appended to the newly created CDF Paragraph title even if the Paragraph is using bundle-specific settings.',
     ];
     $form['default']['tokens'] = array(
       '#theme' => 'token_tree_link',
-      '#token_types' => array('node'),
-      '#description' => 'Any node token will be understood as the closest ancestor node to which this Paragraph is attached. For example, the Paragraph might be attached to a Paragraph that is attached to a node; that\'s the node the tokens would use.'
+      '#token_types' => array('node', 'cdf'),
     );
 
     $form['paragraphs'] = [
