@@ -9,19 +9,16 @@ function paragraph_cdf_title_token_info(){
   $info['tokens']['cdf'] = array(
    'bundle-machine' => array(
      'name' => t('Bundle (Machine)'),
-     'type' => 'bundle-machine',
      'description' => 'Paragraph Bundle (Machine Name)',
      'needs-data' => array('cdf'),
    ),
    'bundle-label' => array(
      'name' => t('Bundle (Label)'),
-     'type' => 'bundle-label',
      'description' => 'Paragraph Bundle (Human Readable Name)',
      'needs-data' => array('cdf'),
    ),
    'uuid' => array(
      'name' => t('UUID'),
-     'type' => 'uuid',
      'description' => 'Paragraph UUID',
      'needs-data' => array('cdf'),
    ),
