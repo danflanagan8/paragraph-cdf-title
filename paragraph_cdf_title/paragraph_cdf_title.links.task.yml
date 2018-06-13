@@ -1,0 +1,5 @@
+paragraph_cdf_title.config:
+  route_name: paragraph_cdf_title.config
+  title: 'Paragraph CDF Title'
+  weight: 125
+  base_route: acquia_contenthub.admin_settings
