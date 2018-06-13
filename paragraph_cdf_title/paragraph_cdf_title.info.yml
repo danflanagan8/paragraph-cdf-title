@@ -1,6 +1,10 @@
 name: Paragraph CDF Title
 type: module
 description: 'Add title to Paragraph CDF for export to Content Hub.'
-package: acquia
+package: Acquia Content Hub
 version: VERSION
 core: 8.x
+dependencies:
+  - token:token
+  - acquia_contenthub:acquia_contenthub
+  - paragraphs:paragraphs
